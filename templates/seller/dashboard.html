@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+
+{% block title %}Seller Dashboard - Pawfect Finds{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2><i class="fas fa-store"></i> Seller Dashboard</h2>
+            <p class="text-muted">Welcome back, {{ seller.first_name }}! Manage your store and orders.</p>
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">{{ products|length }}</h4>
+                            <p class="mb-0">Total Products</p>
+                        </div>
+                        <i class="fas fa-boxes fa-2x opacity-75"></i>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{{ url_for('seller.products') }}" class="text-white text-decoration-none">
+                        <i class="fas fa-eye"></i> View Products
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">{{ orders|length }}</h4>
+                            <p class="mb-0">Total Orders</p>
+                        </div>
+                        <i class="fas fa-shopping-cart fa-2x opacity-75"></i>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{{ url_for('seller.orders') }}" class="text-white text-decoration-none">
+                        <i class="fas fa-eye"></i> View Orders
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">
+                                {{ orders|selectattr("status", "equalto", "pending")|list|length }}
+                            </h4>
+                            <p class="mb-0">Pending Orders</p>
+                        </div>
+                        <i class="fas fa-clock fa-2x opacity-75"></i>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{{ url_for('seller.orders', status='pending') }}" class="text-white text-decoration-none">
+                        <i class="fas fa-eye"></i> View Pending
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">
+                                ${{ "%.2f"|format(orders|map(attribute='total_amount')|sum) }}
+                            </h4>
+                            <p class="mb-0">Total Sales</p>
+                        </div>
+                        <i class="fas fa-dollar-sign fa-2x opacity-75"></i>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <span class="text-white">
+                        <i class="fas fa-chart-line"></i> All Time
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center mb-3">
+                            <a href="{{ url_for('seller.products') }}" class="btn btn-outline-primary btn-lg w-100">
+                                <i class="fas fa-plus-circle fa-2x mb-2"></i><br>
+                                Add Product
+                            </a>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <a href="{{ url_for('seller.orders') }}" class="btn btn-outline-success btn-lg w-100">
+                                <i class="fas fa-list-alt fa-2x mb-2"></i><br>
+                                Manage Orders
+                            </a>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <a href="{{ url_for('seller.products') }}" class="btn btn-outline-info btn-lg w-100">
+                                <i class="fas fa-edit fa-2x mb-2"></i><br>
+                                Edit Products
+                            </a>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <a href="{{ url_for('user.settings') }}" class="btn btn-outline-secondary btn-lg w-100">
+                                <i class="fas fa-cog fa-2x mb-2"></i><br>
+                                Settings
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Orders -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-shopping-cart"></i> Recent Orders</h5>
+                        <a href="{{ url_for('seller.orders') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-eye"></i> View All
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if orders[:5] %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Customer</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for order in orders[:5] %}
+                                        <tr>
+                                            <td>#{{ order.id }}</td>
+                                            <td>Customer #{{ order.user_id }}</td>
+                                            <td>${{ "%.2f"|format(order.total_amount) }}</td>
+                                            <td>
+                                                <span class="badge bg-{{ 
+                                                    'warning' if order.status == 'pending' else
+                                                    'primary' if order.status == 'confirmed' else
+                                                    'info' if order.status in ['preparing', 'shipped', 'on_the_way'] else
+                                                    'success' if order.status == 'delivered' else
+                                                    'danger' if order.status == 'cancelled' else
+                                                    'secondary'
+                                                }}">
+                                                    {{ order.status.replace('_', ' ').title() }}
+                                                </span>
+                                            </td>
+                                            <td>{{ order.created_at.strftime('%m/%d/%Y') }}</td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <button type="button" class="btn btn-outline-primary btn-sm dropdown-toggle" 
+                                                            data-bs-toggle="dropdown">
+                                                        Update Status
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        {% if order.status == 'pending' %}
+                                                            <li><a class="dropdown-item" href="#" onclick="updateOrderStatus({{ order.id }}, 'confirmed')">Confirm Order</a></li>
+                                                        {% endif %}
+                                                        {% if order.status in ['pending', 'confirmed'] %}
+                                                            <li><a class="dropdown-item" href="#" onclick="updateOrderStatus({{ order.id }}, 'preparing')">Mark as Preparing</a></li>
+                                                        {% endif %}
+                                                        {% if order.status in ['pending', 'confirmed', 'preparing'] %}
+                                                            <li><a class="dropdown-item" href="#" onclick="updateOrderStatus({{ order.id }}, 'shipped')">Mark as Shipped</a></li>
+                                                        {% endif %}
+                                                        {% if order.status in ['shipped'] %}
+                                                            <li><a class="dropdown-item" href="#" onclick="updateOrderStatus({{ order.id }}, 'on_the_way')">Mark as On the Way</a></li>
+                                                        {% endif %}
+                                                        {% if order.status not in ['delivered', 'cancelled'] %}
+                                                            <li><hr class="dropdown-divider"></li>
+                                                            <li><a class="dropdown-item text-danger" href="#" onclick="updateOrderStatus({{ order.id }}, 'cancelled')">Cancel Order</a></li>
+                                                        {% endif %}
+                                                    </ul>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Orders Yet</h5>
+                            <p class="text-muted">Orders will appear here once customers start purchasing your products.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Products -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-boxes"></i> Your Products</h5>
+                        <a href="{{ url_for('seller.products') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-eye"></i> Manage All
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if products[:6] %}
+                        <div class="row">
+                            {% for product in products[:6] %}
+                                <div class="col-md-6 col-lg-4 mb-3">
+                                    <div class="card h-100">
+                                        <img src="{{ product.image_url or 'https://via.placeholder.com/200x150?text=Product' }}" 
+                                             class="card-img-top" alt="{{ product.name }}" style="height: 150px; object-fit: cover;">
+                                        <div class="card-body">
+                                            <h6 class="card-title">{{ product.name }}</h6>
+                                            <p class="card-text">
+                                                <strong class="text-primary">${{ "%.2f"|format(product.price) }}</strong>
+                                                <span class="badge bg-{{ 'success' if product.status == 'active' else 'danger' if product.status == 'out_of_stock' else 'secondary' }} ms-2">
+                                                    {{ product.status.replace('_', ' ').title() }}
+                                                </span>
+                                            </p>
+                                            <small class="text-muted">Stock: {{ product.stock_quantity }} units</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Products Added</h5>
+                            <p class="text-muted mb-3">Start by adding your first product to begin selling.</p>
+                            <a href="{{ url_for('seller.products') }}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Add Your First Product
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden form for status updates -->
+<form id="statusUpdateForm" method="POST" action="{{ url_for('seller.update_order_status') }}" style="display: none;">
+    {{ csrf_token() }}
+    <input type="hidden" id="orderIdInput" name="order_id">
+    <input type="hidden" id="statusInput" name="status">
+</form>
+
+<script>
+function updateOrderStatus(orderId, status) {
+    if (confirm('Are you sure you want to update this order status?')) {
+        const form = document.getElementById('statusUpdateForm');
+        document.getElementById('orderIdInput').value = orderId;
+        document.getElementById('statusInput').value = status;
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

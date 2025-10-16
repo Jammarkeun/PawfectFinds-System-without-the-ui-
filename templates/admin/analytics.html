@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-chart-line"></i> Analytics & Reports</h2>
+                    <p class="text-muted">Platform performance insights and metrics</p>
+                </div>
+                <div>
+                    <button class="btn btn-outline-primary" onclick="window.print()">
+                        <i class="fas fa-print"></i> Print Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sales Analytics -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-area"></i> Sales Trend (Last 30 Days)</h5>
+                </div>
+                <div class="card-body">
+                    {% if sales_data %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Orders</th>
+                                        <th>Revenue</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for day in sales_data[:10] %}
+                                        <tr>
+                                            <td>{{ day.date.strftime('%m/%d/%Y') if day.date else 'N/A' }}</td>
+                                            <td>{{ day.order_count }}</td>
+                                            <td>${{ "%.2f"|format(day.total_sales) }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle"></i>
+                            Chart visualization would be implemented here using Chart.js or similar library.
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Sales Data</h5>
+                            <p class="text-muted">Sales data will appear once orders are placed.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Category Performance & Top Sellers -->
+    <div class="row mb-4">
+        <!-- Top Categories -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-tags"></i> Top Selling Categories</h5>
+                </div>
+                <div class="card-body">
+                    {% if category_sales %}
+                        <div class="list-group list-group-flush">
+                            {% for category in category_sales %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">{{ category.name }}</h6>
+                                        <small class="text-muted">{{ category.items_sold }} items sold</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-primary rounded-pill">${{ "%.2f"|format(category.revenue) }}</span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-tags fa-2x text-muted mb-3"></i>
+                            <p class="text-muted">No category data available yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Top Sellers -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-crown"></i> Top Performing Sellers</h5>
+                </div>
+                <div class="card-body">
+                    {% if top_sellers %}
+                        <div class="list-group list-group-flush">
+                            {% for seller in top_sellers %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">{{ seller.first_name }} {{ seller.last_name }}</h6>
+                                        <small class="text-muted">@{{ seller.username }} • {{ seller.total_orders }} orders</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-success rounded-pill">${{ "%.2f"|format(seller.total_revenue) }}</span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-crown fa-2x text-muted mb-3"></i>
+                            <p class="text-muted">No seller data available yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Key Metrics Grid -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-shopping-cart fa-2x mb-2"></i>
+                    <h4 class="mb-0">{{ sales_data|length if sales_data else 0 }}</h4>
+                    <p class="mb-0">Days with Sales</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-dollar-sign fa-2x mb-2"></i>
+                    <h4 class="mb-0">${{ "%.0f"|format(sales_data|map(attribute='total_sales')|sum) if sales_data else 0 }}</h4>
+                    <p class="mb-0">Total Revenue</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-box fa-2x mb-2"></i>
+                    <h4 class="mb-0">{{ category_sales|map(attribute='items_sold')|sum if category_sales else 0 }}</h4>
+                    <p class="mb-0">Items Sold</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-store fa-2x mb-2"></i>
+                    <h4 class="mb-0">{{ top_sellers|length if top_sellers else 0 }}</h4>
+                    <p class="mb-0">Active Sellers</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Detailed Reports -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-file-alt"></i> Detailed Reports</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-calendar-day fa-2x text-primary mb-3"></i>
+                                    <h6>Daily Sales Report</h6>
+                                    <p class="small text-muted">View detailed daily sales breakdown</p>
+                                    <button class="btn btn-outline-primary btn-sm" onclick="generateReport('daily')">
+                                        <i class="fas fa-download"></i> Generate
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-calendar-week fa-2x text-success mb-3"></i>
+                                    <h6>Weekly Summary</h6>
+                                    <p class="small text-muted">Weekly performance analysis</p>
+                                    <button class="btn btn-outline-success btn-sm" onclick="generateReport('weekly')">
+                                        <i class="fas fa-download"></i> Generate
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-calendar-alt fa-2x text-info mb-3"></i>
+                                    <h6>Monthly Overview</h6>
+                                    <p class="small text-muted">Comprehensive monthly report</p>
+                                    <button class="btn btn-outline-info btn-sm" onclick="generateReport('monthly')">
+                                        <i class="fas fa-download"></i> Generate
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function generateReport(type) {
+    // This would typically generate and download a report
+    alert(`Generating ${type} report... This would be implemented with actual report generation functionality.`);
+}
+
+// Add some basic chart placeholder functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // This is where you'd initialize Chart.js charts
+    console.log('Analytics page loaded. Chart.js integration would go here.');
+});
+</script>
+
+<style>
+@media print {
+    .btn, .dropdown-toggle {
+        display: none !important;
+    }
+    
+    .card {
+        break-inside: avoid;
+        margin-bottom: 1rem;
+    }
+}
+</style>
+{% endblock %}

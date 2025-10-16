@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}Rider Dashboard - Pawfect Finds{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">
+                    <i class="fas fa-motorcycle text-primary"></i> Rider Dashboard
+                </h2>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                    <h4 class="card-title mb-1">{{ pending_deliveries or 0 }}</h4>
+                    <p class="card-text text-muted small">Pending Deliveries</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                    <h4 class="card-title mb-1">{{ completed_deliveries or 0 }}</h4>
+                    <p class="card-text text-muted small">Completed Today</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-dollar-sign fa-2x text-info mb-2"></i>
+                    <h4 class="card-title mb-1">${{ monthly_earnings or 0.00 }}</h4>
+                    <p class="card-text text-muted small">This Month Earnings</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-star fa-2x text-warning mb-2"></i>
+                    <h4 class="card-title mb-1">{{ avg_rating or 0 }}/5</h4>
+                    <p class="card-text text-muted small">Average Rating</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Filter -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{{ url_for('rider.dashboard') }}" class="btn btn-outline-primary {% if not status %}active{% endif %}">
+                    <i class="fas fa-list"></i> All
+                </a>
+                <a href="{{ url_for('rider.dashboard', status='assigned') }}" class="btn btn-outline-primary {% if status == 'assigned' %}active{% endif %}">
+                    <i class="fas fa-user-check"></i> Assigned
+                </a>
+                <a href="{{ url_for('rider.dashboard', status='picked_up') }}" class="btn btn-outline-primary {% if status == 'picked_up' %}active{% endif %}">
+                    <i class="fas fa-box"></i> Picked Up
+                </a>
+                <a href="{{ url_for('rider.dashboard', status='on_the_way') }}" class="btn btn-outline-warning {% if status == 'on_the_way' %}active{% endif %}">
+                    <i class="fas fa-shipping-fast"></i> On the Way
+                </a>
+                <a href="{{ url_for('rider.dashboard', status='delivered') }}" class="btn btn-outline-success {% if status == 'delivered' %}active{% endif %}">
+                    <i class="fas fa-check"></i> Delivered
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Deliveries -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-truck text-primary"></i> Recent Deliveries
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if deliveries %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Delivery ID</th>
+                                        <th>Order #</th>
+                                        <th>Customer</th>
+                                        <th>Address</th>
+                                        <th>Total</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for delivery in deliveries %}
+                                    <tr>
+                                        <td>{{ delivery.id }}</td>
+                                        <td><a href="#" data-bs-toggle="modal" data-bs-target="#deliveryModal{{ delivery.id }}" class="text-decoration-none">#{{ delivery.order.order_number }}</a></td>
+                                        <td>{{ delivery.order.user.first_name }} {{ delivery.order.user.last_name }}<br><small class="text-muted">{{ delivery.order.user.phone }}</small></td>
+                                        <td>{{ delivery.order.shipping_address|truncate(40) }}</td>
+                                        <td><strong>${{ "%.2f"|format(delivery.order.total_amount) }}</strong></td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if delivery.status == 'delivered' else 'warning' if delivery.status == 'on_the_way' else 'info' if delivery.status == 'picked_up' else 'secondary' if delivery.status == 'assigned' else 'danger' }}">
+                                                {{ delivery.status.replace('_', ' ').title() }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if delivery.status not in ['delivered'] %}
+                                                <form method="POST" action="{{ url_for('rider.update_delivery_status') }}" class="d-inline" style="display: inline-block;">
+                                                    {{ form.csrf_token }}
+                                                    <input type="hidden" name="delivery_id" value="{{ delivery.id }}">
+                                                    <select name="status" class="form-select form-select-sm d-inline-block w-auto" onchange="this.form.submit()" style="width: auto; margin-right: 5px;">
+                                                        <option value="assigned" {% if delivery.status == 'assigned' %}selected{% endif %}>Assigned</option>
+                                                        <option value="picked_up" {% if delivery.status == 'picked_up' %}selected{% endif %}>Picked Up</option>
+                                                        <option value="on_the_way" {% if delivery.status == 'on_the_way' %}selected{% endif %}>On the Way</option>
+                                                        <option value="delivered" {% if delivery.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                                                    </select>
+                                                </form>
+                                            {% endif %}
+                                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#deliveryModal{{ delivery.id }}">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Delivery Detail Modal -->
+                                    <div class="modal fade" id="deliveryModal{{ delivery.id }}" tabindex="-1" aria-labelledby="deliveryModalLabel{{ delivery.id }}" aria-hidden="true">
+                                        <div class="modal-dialog modal-lg">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-primary text-white">
+                                                    <h5 class="modal-title" id="deliveryModalLabel{{ delivery.id }}">
+                                                        <i class="fas fa-truck"></i> Delivery Details #{{ delivery.id }}
+                                                    </h5>
+                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <h6><i class="fas fa-user"></i> Customer Information</h6>
+                                                            <p class="mb-1"><strong>Name:</strong> {{ delivery.order.user.first_name }} {{ delivery.order.user.last_name }}</p>
+                                                            <p class="mb-1"><strong>Email:</strong> {{ delivery.order.user.email }}</p>
+                                                            <p class="mb-1"><strong>Phone:</strong> {{ delivery.order.user.phone }}</p>
+                                                            <p class="mb-0"><strong>Address:</strong> {{ delivery.order.shipping_address }}</p>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <h6><i class="fas fa-info-circle"></i> Delivery Information</h6>
+                                                            <p class="mb-1"><strong>Status:</strong> 
+                                                                <span class="badge bg-{{ 'success' if delivery.status == 'delivered' else 'warning' if delivery.status == 'on_the_way' else 'info' if delivery.status == 'picked_up' else 'secondary' }}">
+                                                                    {{ delivery.status.replace('_', ' ').title() }}
+                                                                </span>
+                                                            </p>
+                                                            {% if delivery.assigned_at %}
+                                                                <p class="mb-1"><strong>Assigned:</strong> {{ delivery.assigned_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                                                            {% endif %}
+                                                            {% if delivery.picked_up_at %}
+                                                                <p class="mb-1"><strong>Picked Up:</strong> {{ delivery.picked_up_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                                                            {% endif %}
+                                                            {% if delivery.delivered_at %}
+                                                                <p class="mb-1"><strong>Delivered:</strong> {{ delivery.delivered_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                                                            {% endif %}
+                                                            {% if delivery.notes %}
+                                                                <p class="mb-0"><strong>Notes:</strong> {{ delivery.notes }}</p>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                    <hr>
+                                                    <h6><i class="fas fa-shopping-bag"></i> Order Items</h6>
+                                                    <div class="row g-3">
+                                                        {% for item in delivery.order.order_items %}
+                                                            <div class="col-md-6">
+                                                                <div class="card h-100 border-0 shadow-sm">
+                                                                    <div class="card-body">
+                                                                        <div class="d-flex align-items-center">
+                                                                            {% if item.product.image_url %}
+                                                                                <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" class="rounded me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                                                                            {% else %}
+                                                                                <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                                                                    <i class="fas fa-box text-muted"></i>
+                                                                                </div>
+                                                                            {% endif %}
+                                                                            <div class="flex-grow-1">
+                                                                                <h6 class="mb-1">{{ item.product.name }}</h6>
+                                                                                <p class="mb-1 small text-muted">Qty: {{ item.quantity }} | Size: {{ item.size or 'N/A' }}</p>
+                                                                                <p class="mb-0"><strong>${{ "%.2f"|format(item.price) }}</strong></p>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                    <div class="mt-3 text-end">
+                                                        <h5 class="text-primary"><strong>Total: ${{ "%.2f"|format(delivery.order.total_amount) }}</strong></h5>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    {% if delivery.status not in ['delivered'] %}
+                                                        <form method="POST" action="{{ url_for('rider.update_delivery_status') }}" class="d-inline">
+                                                            {{ form.csrf_token }}
+                                                            <input type="hidden" name="delivery_id" value="{{ delivery.id }}">
+                                                            <div class="input-group input-group-sm">
+                                                                <select name="status" class="form-select">
+                                                                    <option value="assigned" {% if delivery.status == 'assigned' %}selected{% endif %}>Assigned</option>
+                                                                    <option value="picked_up" {% if delivery.status == 'picked_up' %}selected{% endif %}>Picked Up</option>
+                                                                    <option value="on_the_way" {% if delivery.status == 'on_the_way' %}selected{% endif %}>On the Way</option>
+                                                                    <option value="delivered">Delivered</option>
+                                                                </select>
+                                                                <input type="text" name="notes" class="form-control" placeholder="Add notes (optional)" value="{{ delivery.notes or '' }}">
+                                                                <button type="submit" class="btn btn-primary">
+                                                                    <i class="fas fa-save"></i> Update Status
+                                                                </button>
+                                                            </div>
+                                                        </form>
+                                                    {% else %}
+                                                        <button type="button" class="btn btn-success" data-bs-dismiss="modal">
+                                                            <i class="fas fa-check"></i> Delivery Completed
+                                                        </button>
+                                                    {% endif %}
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                        <i class="fas fa-times"></i> Close
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="card-body text-center py-5">
+                            <i class="fas fa-truck fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No deliveries assigned yet</h5>
+                            <p class="text-muted">Check back later for new assignments.</p>
+                            <a href="{{ url_for('rider.dashboard') }}" class="btn btn-primary">
+                                <i class="fas fa-refresh"></i> Refresh
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Auto-submit status change forms
+    document.querySelectorAll('select[name="status"]').forEach(select => {
+        select.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+</script>
+{% endblock %}

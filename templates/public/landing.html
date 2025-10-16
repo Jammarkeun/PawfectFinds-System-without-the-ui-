@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Pawfect Finds - The Purrfect Shop for All Pet Supplies{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section text-center">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 mb-4">
+                    <i class="fas fa-paw"></i> Welcome to Pawfect Finds
+                </h1>
+                <p class="lead mb-4">
+                    The purrfect destination for all your pet's needs! From nutritious food to fun toys, 
+                    grooming supplies to health products - we've got everything to keep your furry, 
+                    feathered, and finned friends happy and healthy.
+                </p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{{ url_for('public.browse_products') }}" class="btn btn-light btn-lg">
+                        <i class="fas fa-shopping-bag"></i> Shop Now
+                    </a>
+                    {% if not current_user %}
+                        <a href="{{ url_for('auth.signup') }}" class="btn btn-outline-light btn-lg">
+                            <i class="fas fa-user-plus"></i> Join Us
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <img src="https://images.unsplash.com/photo-1583337130417-3346a1be7dee?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80"
+                     alt="Happy pets" class="img-fluid rounded shadow-lg">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Categories Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2><i class="fas fa-heart"></i> Shop by Category</h2>
+            <p class="lead text-muted">Find exactly what your pet needs</p>
+        </div>
+        
+        <div class="row g-4">
+            {% for category in categories %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card category-card h-100">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                {% if 'Dog' in category.name %}
+                                    <i class="fas fa-dog fa-3x text-primary"></i>
+                                {% elif 'Cat' in category.name %}
+                                    <i class="fas fa-cat fa-3x text-primary"></i>
+                                {% elif 'Fish' in category.name or 'Aquarium' in category.name %}
+                                    <i class="fas fa-fish fa-3x text-primary"></i>
+                                {% elif 'Bird' in category.name %}
+                                    <i class="fas fa-dove fa-3x text-primary"></i>
+                                {% elif 'Grooming' in category.name %}
+                                    <i class="fas fa-cut fa-3x text-primary"></i>
+                                {% else %}
+                                    <i class="fas fa-heart fa-3x text-primary"></i>
+                                {% endif %}
+                            </div>
+                            <h5 class="card-title">{{ category.name }}</h5>
+                            <p class="card-text text-muted">{{ category.description }}</p>
+                            <a href="{{ url_for('public.category_products', category_id=category.id) }}" 
+                               class="btn btn-primary">
+                                Browse Products
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Featured Products -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2><i class="fas fa-star"></i> Featured Products</h2>
+            <p class="lead text-muted">Popular items loved by pets and their owners</p>
+        </div>
+        
+        <div class="row g-4">
+            {% for product in featured_products %}
+                <div class="col-md-6 col-lg-3">
+                    <div class="card product-card h-100">
+                        <img src="{{ product.image_url or 'https://via.placeholder.com/300x200?text=Pet+Product' }}" 
+                             class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+                        <div class="card-body d-flex flex-column">
+                            <h6 class="card-title">{{ product.name }}</h6>
+                            <p class="card-text text-muted small flex-grow-1">
+                                {{ product.description[:80] }}{% if product.description|length > 80 %}...{% endif %}
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong class="text-primary">${{ "%.2f"|format(product.price) }}</strong>
+                                <small class="text-muted">By {{ product.seller_username }}</small>
+                            </div>
+                            <a href="{{ url_for('public.product_detail', product_id=product.id) }}" 
+                               class="btn btn-primary btn-sm mt-2">
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <div class="text-center mt-4">
+            <a href="{{ url_for('public.browse_products') }}" class="btn btn-outline-primary btn-lg">
+                <i class="fas fa-eye"></i> View All Products
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- About Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <img src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80" 
+                     alt="Pet care" class="img-fluid rounded">
+            </div>
+            <div class="col-lg-6">
+                <h2><i class="fas fa-paw"></i> Why Choose Pawfect Finds?</h2>
+                <div class="row mt-4">
+                    <div class="col-sm-6 mb-3">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-shield-alt text-primary me-3 mt-1"></i>
+                            <div>
+                                <h6>Quality Guaranteed</h6>
+                                <small class="text-muted">Only the best products for your beloved pets</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 mb-3">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-shipping-fast text-primary me-3 mt-1"></i>
+                            <div>
+                                <h6>Fast Delivery</h6>
+                                <small class="text-muted">Quick and reliable shipping nationwide</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 mb-3">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-users text-primary me-3 mt-1"></i>
+                            <div>
+                                <h6>Expert Support</h6>
+                                <small class="text-muted">Pet care experts ready to help</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 mb-3">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-heart text-primary me-3 mt-1"></i>
+                            <div>
+                                <h6>Pet Lovers</h6>
+                                <small class="text-muted">Made by pet lovers, for pet lovers</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <a href="{{ url_for('public.about') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-info-circle"></i> Learn More About Us
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+{% if not current_user %}
+<section class="py-5" style="background-color: var(--accent-color);">
+    <div class="container text-center">
+        <h2 class="text-dark">Ready to Start Shopping?</h2>
+        <p class="lead text-dark mb-4">Join thousands of happy pet parents who trust Pawfect Finds</p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{{ url_for('auth.signup') }}" class="btn btn-dark btn-lg">
+                <i class="fas fa-user-plus"></i> Create Account
+            </a>
+            <a href="{{ url_for('public.browse_products') }}" class="btn btn-outline-dark btn-lg">
+                <i class="fas fa-shopping-bag"></i> Browse Products
+            </a>
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endblock %}
